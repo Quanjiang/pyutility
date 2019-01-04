@@ -21,9 +21,9 @@ class MDResPool:
             self.obj = obj
             self.id = id
             self._is_close_already = False
-        
-        def run(self,*args, **kwargs):
-            self.obj.run(*args, **kwargs)
+
+        def __getattr__(self, item):
+            return getattr(self.obj,item)
         
         def close(self):
             if self._is_close_already:
@@ -119,4 +119,19 @@ class MDResPool:
         else:
             self.core_pools[id]['status'] = 0
             self.core_pools_unuse.append(id)
+        self.lock.release()
+
+    def update_res(self,target=None, args=(),kwargs={}):
+        ''' 用来热更新
+        '''
+        if target is not None:
+            self.gunerate_func = target
+        if args != ():
+            self.gunerate_func_args = args
+        if kwargs != {}:
+            self.gunnerate_func_kwargs = kwargs
+        
+        self.lock.acquire()
+        for key in self.core_pools:
+            self.core_pools[key]['wish_close'] = 1
         self.lock.release()
